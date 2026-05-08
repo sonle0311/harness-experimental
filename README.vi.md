@@ -83,18 +83,37 @@ curl -fsSL "https://raw.githubusercontent.com/sonle0311/harness-experimental/mai
 Từ thư mục project đích, chạy:
 
 ```powershell
-& ([ScriptBlock]::Create((Invoke-RestMethod "https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.ps1?$(Get-Date -UFormat %s)"))) -Yes
+$installer = Join-Path $env:TEMP "install-harness.ps1"
+Invoke-RestMethod "https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.ps1?$(Get-Date -UFormat %s)" -OutFile $installer
+& $installer -Yes
 ```
 
 Hoặc cài vào một đường dẫn cụ thể:
 
 ```powershell
-& ([ScriptBlock]::Create((Invoke-RestMethod "https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.ps1?$(Get-Date -UFormat %s)"))) -Directory "C:\path\to\project" -Yes
+$installer = Join-Path $env:TEMP "install-harness.ps1"
+Invoke-RestMethod "https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.ps1?$(Get-Date -UFormat %s)" -OutFile $installer
+& $installer -Directory "C:\path\to\project" -Yes
+```
+
+### Windows Command Prompt
+
+Nếu bạn đang dùng Command Prompt (`cmd.exe`) thay vì PowerShell, dùng lệnh bọc
+sau:
+
+```cmd
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-RestMethod 'https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.ps1' -OutFile $env:TEMP\install-harness.ps1; & $env:TEMP\install-harness.ps1 -Yes"
+```
+
+Hoặc cài vào một đường dẫn cụ thể:
+
+```cmd
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-RestMethod 'https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.ps1' -OutFile $env:TEMP\install-harness.ps1; & $env:TEMP\install-harness.ps1 -Directory 'C:\path\to\project' -Yes"
 ```
 
 Nếu target đã có `AGENTS.md`, `docs/`, hoặc `scripts/`, installer sẽ cảnh báo
 và dừng trước khi ghi file. Hãy dùng thư mục target trống, hoặc di chuyển các
 đường dẫn đó trước khi chạy installer. Dùng `--dry-run` để xem trước thay đổi.
 Installer và story của installer trong repository này sẽ không được copy vào
-project đích. Trên Windows PowerShell, dùng `-DryRun`, `-Force`, và `-Yes` thay
-cho các tùy chọn kiểu Bash là `--dry-run`, `--force`, và `--yes`.
+project đích. Trên Windows, dùng `-DryRun`, `-Force`, và `-Yes` thay cho các
+tùy chọn kiểu Bash là `--dry-run`, `--force`, và `--yes`.

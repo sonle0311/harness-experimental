@@ -37,6 +37,8 @@ scripts, CI, tests, or product implementation.
 - The installer script and this installer story are not copied into target
   projects.
 - Windows users can install from PowerShell without requiring Bash.
+- Windows users running Command Prompt receive a wrapper command that launches
+  PowerShell instead of pasting PowerShell syntax directly into `cmd.exe`.
 - Target projects receive both English and Vietnamese README files.
 
 ## Design Notes
@@ -44,7 +46,8 @@ scripts, CI, tests, or product implementation.
 - Commands: `scripts/install-harness.sh [--directory path] [--yes] [--force] [--dry-run]`
 - Windows commands: `scripts/install-harness.ps1 [-Directory path] [-Yes] [-Force] [-DryRun]`
 - Remote install: `curl -fsSL "https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.sh?$(date +%s)" | bash -s -- --yes`
-- Windows remote install: `& ([ScriptBlock]::Create((Invoke-RestMethod "https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.ps1?$(Get-Date -UFormat %s)"))) -Yes`
+- Windows PowerShell remote install: download `scripts/install-harness.ps1` to `$env:TEMP`, then run it with `-Yes`.
+- Windows Command Prompt remote install: run `powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-RestMethod ...; & $env:TEMP\install-harness.ps1 -Yes"`.
 - Queries: none.
 - API: none.
 - Tables: none.

@@ -48,7 +48,9 @@ Examples:
   .\scripts\install-harness.ps1 -Yes
   .\scripts\install-harness.ps1 -Directory C:\path\to\project -Yes
   .\scripts\install-harness.ps1 .\my-project -Force
-  & ([ScriptBlock]::Create((Invoke-RestMethod "https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.ps1"))) -Yes
+  $installer = Join-Path $env:TEMP "install-harness.ps1"
+  Invoke-RestMethod "https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.ps1" -OutFile $installer
+  & $installer -Yes
 '@ | Write-Output
 }
 

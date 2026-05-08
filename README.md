@@ -85,18 +85,37 @@ curl -fsSL "https://raw.githubusercontent.com/sonle0311/harness-experimental/mai
 From a target project directory, run:
 
 ```powershell
-& ([ScriptBlock]::Create((Invoke-RestMethod "https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.ps1?$(Get-Date -UFormat %s)"))) -Yes
+$installer = Join-Path $env:TEMP "install-harness.ps1"
+Invoke-RestMethod "https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.ps1?$(Get-Date -UFormat %s)" -OutFile $installer
+& $installer -Yes
 ```
 
 Or install into a specific path:
 
 ```powershell
-& ([ScriptBlock]::Create((Invoke-RestMethod "https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.ps1?$(Get-Date -UFormat %s)"))) -Directory "C:\path\to\project" -Yes
+$installer = Join-Path $env:TEMP "install-harness.ps1"
+Invoke-RestMethod "https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.ps1?$(Get-Date -UFormat %s)" -OutFile $installer
+& $installer -Directory "C:\path\to\project" -Yes
+```
+
+### Windows Command Prompt
+
+If you are using Command Prompt (`cmd.exe`) instead of PowerShell, use this
+wrapper command:
+
+```cmd
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-RestMethod 'https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.ps1' -OutFile $env:TEMP\install-harness.ps1; & $env:TEMP\install-harness.ps1 -Yes"
+```
+
+Or install into a specific path:
+
+```cmd
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-RestMethod 'https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.ps1' -OutFile $env:TEMP\install-harness.ps1; & $env:TEMP\install-harness.ps1 -Directory 'C:\path\to\project' -Yes"
 ```
 
 If the target already contains `AGENTS.md`, `docs/`, or `scripts/`, the
 installer warns and stops before writing files. Use an empty target directory,
 or move those paths first. Use `--dry-run` to preview changes. The installer
 itself and this repository's installer story are not copied into the target
-project. On Windows PowerShell, use `-DryRun`, `-Force`, and `-Yes` instead of
-the Bash-style `--dry-run`, `--force`, and `--yes` options.
+project. On Windows, use `-DryRun`, `-Force`, and `-Yes` instead of the
+Bash-style `--dry-run`, `--force`, and `--yes` options.

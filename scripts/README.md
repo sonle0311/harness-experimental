@@ -18,7 +18,15 @@ curl -fsSL "https://raw.githubusercontent.com/sonle0311/harness-experimental/mai
 Windows PowerShell:
 
 ```powershell
-& ([ScriptBlock]::Create((Invoke-RestMethod "https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.ps1?$(Get-Date -UFormat %s)"))) -Yes
+$installer = Join-Path $env:TEMP "install-harness.ps1"
+Invoke-RestMethod "https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.ps1?$(Get-Date -UFormat %s)" -OutFile $installer
+& $installer -Yes
+```
+
+Windows Command Prompt:
+
+```cmd
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-RestMethod 'https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.ps1' -OutFile $env:TEMP\install-harness.ps1; & $env:TEMP\install-harness.ps1 -Yes"
 ```
 
 The installer must stay limited to harness files. Do not use it to scaffold
