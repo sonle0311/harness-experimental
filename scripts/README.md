@@ -9,8 +9,16 @@ structure to a target project directory. It defaults to the current directory,
 accepts a target path, and stops if the target already contains `AGENTS.md`,
 `docs/`, or `scripts/`.
 
+macOS, Linux, or Git Bash:
+
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/hoangnb24/harness-experimental/main/scripts/install-harness.sh?$(date +%s)" | bash -s -- --yes
+curl -fsSL "https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.sh?$(date +%s)" | bash -s -- --yes
+```
+
+Windows PowerShell:
+
+```powershell
+& ([ScriptBlock]::Create((Invoke-RestMethod "https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.ps1?$(Get-Date -UFormat %s)"))) -Yes
 ```
 
 The installer must stay limited to harness files. Do not use it to scaffold

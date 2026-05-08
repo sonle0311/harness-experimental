@@ -1,5 +1,7 @@
 # harness-experimental
 
+[Tiếng Việt](README.vi.md)
+
 ## Current State
 
 This repository is in Harness v0.
@@ -41,6 +43,7 @@ a real project supplies one.
 project/
   AGENTS.md
   README.md
+  README.vi.md
   docs/
     HARNESS.md
     FEATURE_INTAKE.md
@@ -63,20 +66,37 @@ product validation and harness maintenance expectations.
 
 ## Install Harness Into A Project
 
+### macOS, Linux, or Git Bash
+
 From a target project directory, run:
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/hoangnb24/harness-experimental/main/scripts/install-harness.sh?$(date +%s)" | bash -s -- --yes
+curl -fsSL "https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.sh?$(date +%s)" | bash -s -- --yes
 ```
 
 Or install into a specific path:
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/hoangnb24/harness-experimental/main/scripts/install-harness.sh?$(date +%s)" | bash -s -- --directory /path/to/project --yes
+curl -fsSL "https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.sh?$(date +%s)" | bash -s -- --directory /path/to/project --yes
+```
+
+### Windows PowerShell
+
+From a target project directory, run:
+
+```powershell
+& ([ScriptBlock]::Create((Invoke-RestMethod "https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.ps1?$(Get-Date -UFormat %s)"))) -Yes
+```
+
+Or install into a specific path:
+
+```powershell
+& ([ScriptBlock]::Create((Invoke-RestMethod "https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.ps1?$(Get-Date -UFormat %s)"))) -Directory "C:\path\to\project" -Yes
 ```
 
 If the target already contains `AGENTS.md`, `docs/`, or `scripts/`, the
 installer warns and stops before writing files. Use an empty target directory,
 or move those paths first. Use `--dry-run` to preview changes. The installer
 itself and this repository's installer story are not copied into the target
-project.
+project. On Windows PowerShell, use `-DryRun`, `-Force`, and `-Yes` instead of
+the Bash-style `--dry-run`, `--force`, and `--yes` options.

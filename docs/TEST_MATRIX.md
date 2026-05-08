@@ -19,7 +19,7 @@ implemented until tests or validation evidence exist.
 
 | Story | Contract | Unit | Integration | E2E | Platform | Status | Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| TBD | Add rows when story packets are created | no | no | no | no | planned | none |
+| `docs/stories/US-001-install-harness.md` | Install Harness v0 operating files into a target project without scaffolding app code, with POSIX and Windows PowerShell entrypoints. | yes | yes | yes | yes | implemented | `bash -n scripts/install-harness.sh`; PowerShell scriptblock parse; Bash and PowerShell dry-run/install/conflict checks recorded in US-001 evidence. |
 
 ## Evidence Rules
 

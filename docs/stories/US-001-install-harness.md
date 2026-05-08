@@ -36,11 +36,15 @@ scripts, CI, tests, or product implementation.
   application code, package scripts, CI, or validation commands.
 - The installer script and this installer story are not copied into target
   projects.
+- Windows users can install from PowerShell without requiring Bash.
+- Target projects receive both English and Vietnamese README files.
 
 ## Design Notes
 
 - Commands: `scripts/install-harness.sh [--directory path] [--yes] [--force] [--dry-run]`
-- Remote install: `curl -fsSL "https://raw.githubusercontent.com/hoangnb24/harness-experimental/main/scripts/install-harness.sh?$(date +%s)" | bash -s -- --yes`
+- Windows commands: `scripts/install-harness.ps1 [-Directory path] [-Yes] [-Force] [-DryRun]`
+- Remote install: `curl -fsSL "https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.sh?$(date +%s)" | bash -s -- --yes`
+- Windows remote install: `& ([ScriptBlock]::Create((Invoke-RestMethod "https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.ps1?$(Get-Date -UFormat %s)"))) -Yes`
 - Queries: none.
 - API: none.
 - Tables: none.
@@ -55,7 +59,7 @@ scripts, CI, tests, or product implementation.
 | Unit | Shell syntax check for `scripts/install-harness.sh`. |
 | Integration | Dry-run into a temporary target reports expected file creation. |
 | E2E | Install into a temporary target creates the harness file structure. |
-| Platform | POSIX shell execution on the local macOS environment. |
+| Platform | POSIX shell execution on macOS/Linux/Git Bash and PowerShell execution on Windows. |
 | Release | Not applicable until packaging exists. |
 
 ## Harness Delta
@@ -76,10 +80,18 @@ implementation surfaces are not scaffolded.
 - `HARNESS_SOURCE_BASE_URL="file:///Users/themrb/Documents/personal/harness-experimental" bash -s -- --directory "$REMOTE_TARGET" --yes < scripts/install-harness.sh`
 - `curl -fsSL "file:///Users/themrb/Documents/personal/harness-experimental/scripts/install-harness.sh" | HARNESS_SOURCE_BASE_URL="file:///Users/themrb/Documents/personal/harness-experimental" bash -s -- --directory "$TARGET" --yes`
 - `HARNESS_SOURCE_BASE_URL="file:///Users/themrb/Documents/personal/harness-experimental" bash -s -- --directory "$DRY_TARGET" --yes --dry-run < scripts/install-harness.sh`
+- `[ScriptBlock]::Create((Get-Content -Raw scripts\install-harness.ps1))`
+- `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-harness.ps1 -Directory $LOCAL_TARGET -Yes -DryRun`
+- `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-harness.ps1 -Directory $LOCAL_TARGET -Yes`
+- `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-harness.ps1 -Directory $AGENTS_CONFLICT -Yes`
+- `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-harness.ps1 -Directory $README_TARGET -Yes` after adding a custom `README.md` in the target
+- `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-harness.ps1 -Directory $README_FORCE_TARGET -Yes -Force` after adding a custom `README.md` in the target
+- `HARNESS_SOURCE_BASE_URL="file:///C:/path/to/harness-experimental"; & ([ScriptBlock]::Create((Get-Content -Raw .\scripts\install-harness.ps1))) -Directory $REMOTE_TARGET -Yes`
 
 Validated behaviors: dry-run writes no files, real install creates the harness
 structure, existing `README.md` is left untouched by default, targets containing
 `AGENTS.md`, `docs/`, or `scripts/` stop with a warning before writing files,
 protected-path conflicts stop even when `--force` is provided, remote-source
 mode works when the script is piped into Bash, and target projects do not
-receive `scripts/install-harness.sh` or this installer story.
+receive `scripts/install-harness.sh`, `scripts/install-harness.ps1`, or this
+installer story.
