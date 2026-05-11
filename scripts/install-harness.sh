@@ -10,19 +10,25 @@ Apply the Harness v0 files and folders to a target project directory.
 Options:
   -d, --directory <path>  Target directory. Defaults to the current directory.
   -y, --yes              Accept defaults and skip prompts.
+      --merge            On protected-path conflict, keep existing files and
+                         install only missing Harness files.
+      --override         On protected-path conflict, back up and replace
+                         AGENTS.md, docs/, and scripts/.
       --force            Overwrite existing files after backing them up.
       --dry-run          Show what would change without writing files.
   -h, --help             Show this help.
 
 Safety:
-  The installer stops if AGENTS.md, docs/, or scripts/ already exist in the
-  target directory. Pick an empty target or move those paths first.
+  If AGENTS.md, docs/, or scripts/ already exist, interactive installs ask
+  whether to merge missing files, override after backup, or stop. Non-
+  interactive installs stop unless --merge or --override is provided.
 
 Examples:
   scripts/install-harness.sh
   scripts/install-harness.sh --directory /path/to/project --yes
   scripts/install-harness.sh ./my-project --force
   curl -fsSL https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.sh | bash -s -- --yes
+  curl -fsSL https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.sh | bash -s -- --merge --yes
 EOF
 }
 
@@ -38,6 +44,20 @@ fail() {
 warn_stop() {
   printf 'Warning: %s\n' "$*" >&2
   exit 1
+}
+
+can_prompt() {
+  [ -r /dev/tty ] && [ -w /dev/tty ]
+}
+
+prompt_tty() {
+  printf '%s' "$1" > /dev/tty
+}
+
+read_tty() {
+  local value
+  IFS= read -r value < /dev/tty
+  printf '%s\n' "$value"
 }
 
 expand_path() {
@@ -76,7 +96,10 @@ copy_file() {
       return
     fi
 
-    if [ "$FORCE" -eq 1 ]; then
+    if [ "$CONFLICT_ACTION" = "merge" ]; then
+      log "skip     $relative (merge keeps existing file)"
+      SKIPPED=$((SKIPPED + 1))
+    elif [ "$FORCE" -eq 1 ]; then
       if [ "$DRY_RUN" -eq 1 ]; then
         log "overwrite $relative (backup first)"
       else
@@ -126,25 +149,89 @@ check_protected_target_paths() {
   [ -e "$TARGET_DIR/docs" ] && conflicts+=("docs/")
   [ -e "$TARGET_DIR/scripts" ] && conflicts+=("scripts/")
 
-  if [ "${#conflicts[@]}" -gt 0 ]; then
-    local joined=""
-    local item
-    for item in "${conflicts[@]}"; do
-      if [ -n "$joined" ]; then
-        joined="$joined, $item"
-      else
-        joined="$item"
-      fi
-    done
+  [ "${#conflicts[@]}" -gt 0 ] || return 0
 
+  local joined=""
+  local item
+  for item in "${conflicts[@]}"; do
+    if [ -n "$joined" ]; then
+      joined="$joined, $item"
+    else
+      joined="$item"
+    fi
+  done
+
+  case "$REQUESTED_CONFLICT_ACTION" in
+    merge)
+      CONFLICT_ACTION="merge"
+      log "Continuing with merge. Existing files will be skipped."
+      return 0
+      ;;
+    override)
+      CONFLICT_ACTION="override"
+      override_protected_target_paths
+      return 0
+      ;;
+    stop)
+      warn_stop "target already contains protected Harness paths: $joined. Refusing to install so existing project instructions or docs are not mixed or overwritten."
+      ;;
+  esac
+
+  if [ "$YES" -eq 1 ] || ! can_prompt; then
     warn_stop "target already contains protected Harness paths: $joined. Refusing to install so existing project instructions or docs are not mixed or overwritten. Use an empty target directory, or move those paths before running the installer."
   fi
+
+  {
+    printf 'Warning: target already contains protected Harness paths: %s\n' "$joined"
+    printf 'Choose how to continue:\n'
+    printf '  1. Merge    Copy missing Harness files and skip existing files\n'
+    printf '  2. Override Back up and replace AGENTS.md, docs/, and scripts/\n'
+    printf '  3. Stop     Exit without writing files (recommended)\n'
+  } > /dev/tty
+  prompt_tty 'Choice [1/2/3, default 3]: '
+
+  local choice
+  choice="$(read_tty)"
+  case "$choice" in
+    1|m|M|merge|Merge)
+      CONFLICT_ACTION="merge"
+      log "Continuing with merge. Existing files will be skipped."
+      ;;
+    2|o|O|override|Override)
+      CONFLICT_ACTION="override"
+      override_protected_target_paths
+      ;;
+    ""|3|s|S|stop|Stop)
+      warn_stop "installation stopped by user."
+      ;;
+    *)
+      warn_stop "unknown choice: $choice"
+      ;;
+  esac
+}
+
+override_protected_target_paths() {
+  local protected
+
+  for protected in AGENTS.md docs scripts; do
+    [ -e "$TARGET_DIR/$protected" ] || continue
+
+    if [ "$DRY_RUN" -eq 1 ]; then
+      log "override $protected (backup first)"
+      continue
+    fi
+
+    mkdir -p "$BACKUP_DIR"
+    mv "$TARGET_DIR/$protected" "$BACKUP_DIR/$protected"
+    log "removed  $protected (backup: ${BACKUP_DIR#$TARGET_DIR/}/$protected)"
+  done
 }
 
 TARGET_INPUT="${HARNESS_TARGET_DIR:-$PWD}"
 YES=0
 FORCE=0
 DRY_RUN=0
+REQUESTED_CONFLICT_ACTION=""
 POSITIONAL_TARGET=""
 
 while [ "$#" -gt 0 ]; do
@@ -160,6 +247,18 @@ while [ "$#" -gt 0 ]; do
       ;;
     --force)
       FORCE=1
+      shift
+      ;;
+    --merge)
+      REQUESTED_CONFLICT_ACTION="merge"
+      shift
+      ;;
+    --override)
+      REQUESTED_CONFLICT_ACTION="override"
+      shift
+      ;;
+    --stop)
+      REQUESTED_CONFLICT_ACTION="stop"
       shift
       ;;
     --dry-run)
@@ -209,9 +308,9 @@ if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/../AGENTS.md" ] && [ -f "$SCRIPT_DI
   SOURCE_MODE="local"
 fi
 
-if [ "$YES" -eq 0 ] && [ -t 0 ] && [ -t 1 ]; then
-  printf 'Install Harness v0 into [%s]: ' "$TARGET_INPUT"
-  read -r REPLY_TARGET
+if [ "$YES" -eq 0 ] && can_prompt; then
+  prompt_tty "Install Harness v0 into [$TARGET_INPUT]: "
+  REPLY_TARGET="$(read_tty)"
   if [ -n "$REPLY_TARGET" ]; then
     TARGET_INPUT="$REPLY_TARGET"
   fi
@@ -222,6 +321,7 @@ BACKUP_DIR="$TARGET_DIR/.harness-backup/$(date +%Y%m%d%H%M%S)"
 CREATED=0
 UPDATED=0
 SKIPPED=0
+CONFLICT_ACTION="install"
 
 if [ "$DRY_RUN" -eq 1 ]; then
   log "Dry run: no files will be written."

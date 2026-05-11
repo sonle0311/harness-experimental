@@ -6,8 +6,11 @@ This directory is reserved for harness automation.
 
 The upstream installer applies the Harness v0 operating files and folder
 structure to a target project directory. It defaults to the current directory,
-accepts a target path, and stops if the target already contains `AGENTS.md`,
+accepts a target path, and asks interactive users whether to `1. Merge`,
+`2. Override`, or `3. Stop` when the target already contains `AGENTS.md`,
 `docs/`, or `scripts/`.
+Non-interactive installs stop on those protected paths unless `--merge` or
+`--override` is provided.
 
 macOS, Linux, or Git Bash:
 
@@ -27,6 +30,10 @@ Windows Command Prompt:
 
 ```cmd
 powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-RestMethod 'https://raw.githubusercontent.com/sonle0311/harness-experimental/main/scripts/install-harness.ps1' -OutFile $env:TEMP\install-harness.ps1; & $env:TEMP\install-harness.ps1 -Yes"
+```
+
+```bash
+curl -fsSL "https://raw.githubusercontent.com/hoangnb24/harness-experimental/main/scripts/install-harness.sh?$(date +%s)" | bash -s -- --merge --yes
 ```
 
 The installer must stay limited to harness files. Do not use it to scaffold
